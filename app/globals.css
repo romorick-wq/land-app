@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: #0b0e13;
+  color: #e8edf2;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3a4454 transparent;
+}
+
+.maplibregl-map img,
+.maplibregl-canvas {
+  max-width: none !important;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
