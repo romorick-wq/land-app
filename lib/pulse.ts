@@ -94,7 +94,7 @@ export const STAKEHOLDERS: Stakeholder[] = [
 
 export const BRIEFING = {
   summary:
-    "White Pine Solar is trending slightly favorable after spring hearings in Ely. Organized opposition is concentrated in one neighbors' group, while the farm bureau is withholding support until ditch and setback language is settled. The conservation district has not taken a side.",
+    "Stockyards is the working lease campaign in White Pine County. The map and owner list follow the 9/11/2026 tracking report. Community notes below are sample context for the county, not findings from that report.",
   risks: [
     "Neighbors for Clear Views plans coordinated comments on screening and property values.",
     "A road-use agreement is still open with the county road superintendent.",

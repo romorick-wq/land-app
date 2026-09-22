@@ -34,6 +34,7 @@ const HINTS: Record<DrawMode, string> = {
 function mapStyle() {
   return {
     version: 8 as const,
+    glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
     sources: {
       satellite: {
         type: "raster" as const,
@@ -50,6 +51,7 @@ function mapStyle() {
         id: "parcel-fill",
         type: "fill" as const,
         source: "parcels",
+        filter: ["!=", ["get", "outline"], 1],
         paint: {
           "fill-color": ["get", "fill"],
           "fill-opacity": ["get", "fillOpacity"],
@@ -59,9 +61,41 @@ function mapStyle() {
         id: "parcel-line",
         type: "line" as const,
         source: "parcels",
+        filter: ["!=", ["get", "outline"], 1],
         paint: {
           "line-color": ["get", "line"],
           "line-width": ["get", "lineWidth"],
+        },
+      },
+      {
+        id: "parcel-outline",
+        type: "line" as const,
+        source: "parcels",
+        filter: ["==", ["get", "outline"], 1],
+        paint: {
+          "line-color": "#ffffff",
+          "line-width": 2.5,
+          "line-dasharray": [2, 1.4],
+        },
+      },
+      {
+        id: "parcel-label",
+        type: "symbol" as const,
+        source: "parcels",
+        filter: [">", ["length", ["get", "label"]], 0],
+        layout: {
+          "text-field": ["get", "label"],
+          "text-font": ["Open Sans Bold"],
+          "text-size": 13,
+          "text-max-width": 10,
+          "text-anchor": "center",
+          "symbol-placement": "point",
+          "text-allow-overlap": true,
+        },
+        paint: {
+          "text-color": "#ffffff",
+          "text-halo-color": "#0b0e13",
+          "text-halo-width": 1.4,
         },
       },
       {
@@ -383,6 +417,10 @@ export function MapCanvas() {
             </li>
             <li className="flex items-center gap-2 whitespace-nowrap">
               <i className="inline-block h-2.5 w-2.5 shrink-0 border border-amber-400" /> Selected shape
+            </li>
+            <li className="max-w-52 text-[10px] leading-4 text-white/40">BLM PLSS, Mount Diablo meridian, White Pine County</li>
+            <li className="flex items-center gap-2 whitespace-nowrap">
+              <i className="inline-block h-0.5 w-4 border-t-2 border-dashed border-white" /> Surface thermal test well
             </li>
             {STATUSES.map((status) => (
               <li key={status.id} className="flex items-center gap-2 whitespace-nowrap">

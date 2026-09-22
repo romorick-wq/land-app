@@ -1,13 +1,14 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { ADMIN_AGENT, AGENT_STORAGE_KEY, agentNameError, nextAgent, sanitizeAgents, type LandAgent } from "@/lib/agents";
 import { defaultFilters } from "@/lib/filters";
 import { campaignFromGeoJSON } from "@/lib/importGeojson";
 import { cloneSeed } from "@/lib/seed";
 import { isPriority, isStatus } from "@/lib/statuses";
 import type { CampaignData, Filters, Owner } from "@/lib/types";
 
-const STORAGE_KEY = "land-campaign-v2";
+const STORAGE_KEY = "land-campaign-v4";
 
 type CampaignContextValue = {
   owners: Owner[];
@@ -32,9 +33,42 @@ type CampaignContextValue = {
   openDocs: (id: string) => void;
   openContact: (id: string) => void;
   closeModals: () => void;
+  agents: LandAgent[];
+  addAgent: (name: string) => string | null;
+  removeAgent: (id: string) => void;
 };
 
 const CampaignContext = createContext<CampaignContextValue | null>(null);
+
+function applySeedAdditions(stored: CampaignData, seed: CampaignData): CampaignData {
+  const seedParcels = new Map(seed.parcels.map((parcel) => [parcel.id, parcel]));
+  const seedOwners = new Map(seed.owners.map((owner) => [owner.id, owner]));
+  const ids = new Set(stored.parcels.map((parcel) => parcel.id));
+  const owners = stored.owners.map((owner) => {
+    const seeded = seedOwners.get(owner.id);
+    if (seeded?.priority !== "test_well") return owner;
+    return { ...owner, priority: seeded.priority };
+  });
+  const parcels = stored.parcels.map((parcel) => {
+    const seeded = seedParcels.get(parcel.id);
+    if (!seeded) return parcel;
+    if (seeded.outline) return structuredClone(seeded);
+    const interests = parcel.interests?.map((interest) => {
+      const seededInterest = seeded.interests?.find((item) => item.ownerId === interest.ownerId);
+      if (seededInterest?.priority !== "test_well") return interest;
+      return { ...interest, priority: seededInterest.priority };
+    });
+    return {
+      ...parcel,
+      ...(seeded.label ? { label: seeded.label } : {}),
+      ...(interests ? { interests } : {}),
+    };
+  });
+  for (const parcel of seed.parcels) {
+    if (!ids.has(parcel.id)) parcels.push(structuredClone(parcel));
+  }
+  return { ...stored, owners, parcels };
+}
 
 function sanitize(data: CampaignData): CampaignData | null {
   if (!Array.isArray(data.owners) || !Array.isArray(data.parcels) || data.parcels.length === 0) return null;
@@ -66,16 +100,23 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   const [titleOwnerId, setTitleOwnerId] = useState<string | null>(null);
   const [docsOwnerId, setDocsOwnerId] = useState<string | null>(null);
   const [contactOwnerId, setContactOwnerId] = useState<string | null>(null);
+  const [agents, setAgents] = useState<LandAgent[]>([ADMIN_AGENT]);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = sanitize(JSON.parse(raw) as CampaignData);
-        if (parsed) setCampaign(parsed);
+        if (parsed) setCampaign(applySeedAdditions(parsed, seed));
       }
     } catch {
       localStorage.removeItem(STORAGE_KEY);
+    }
+    try {
+      const rawAgents = localStorage.getItem(AGENT_STORAGE_KEY);
+      if (rawAgents) setAgents(sanitizeAgents(JSON.parse(rawAgents)));
+    } catch {
+      localStorage.removeItem(AGENT_STORAGE_KEY);
     }
     setReady(true);
   }, []);
@@ -84,6 +125,11 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     if (!ready) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(campaign));
   }, [campaign, ready]);
+
+  useEffect(() => {
+    if (!ready) return;
+    localStorage.setItem(AGENT_STORAGE_KEY, JSON.stringify(agents));
+  }, [agents, ready]);
 
   const value = useMemo<CampaignContextValue>(() => {
     return {
@@ -114,6 +160,10 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
           owners: current.owners.map((owner) =>
             owner.id === id ? { ...owner, ...patch, updatedAt: patch.updatedAt ?? new Date().toISOString() } : owner,
           ),
+          parcels:
+            patch.status && isStatus(patch.status)
+              ? current.parcels.map((parcel) => (parcel.ownerId === id ? { ...parcel, status: patch.status } : parcel))
+              : current.parcels,
         }));
       },
       importCollection: (data) => {
@@ -152,8 +202,27 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
         setDocsOwnerId(null);
         setContactOwnerId(null);
       },
+      agents,
+      addAgent: (name) => {
+        const message = agentNameError(name, agents);
+        if (message) return message;
+        setAgents((current) => [...current, nextAgent(name, current)]);
+        return null;
+      },
+      removeAgent: (id) => {
+        const agent = agents.find((item) => item.id === id);
+        if (!agent || agent.role === "admin") return;
+        setAgents((current) => current.filter((item) => item.id !== id));
+        setCampaign((current) => ({
+          ...current,
+          owners: current.owners.map((owner) =>
+            owner.agent === agent.name ? { ...owner, agent: "", updatedAt: new Date().toISOString() } : owner,
+          ),
+        }));
+        setFilterState((current) => (current.agent === agent.name ? { ...current, agent: "all" } : current));
+      },
     };
-  }, [campaign, filters, selectedOwnerId, pendingParcelIds, importError, titleOwnerId, docsOwnerId, contactOwnerId]);
+  }, [campaign, filters, selectedOwnerId, pendingParcelIds, importError, titleOwnerId, docsOwnerId, contactOwnerId, agents]);
 
   if (!ready) {
     return <div className="grid h-screen place-items-center bg-[#0b0e13] text-sm text-white/60">Loading campaign…</div>;

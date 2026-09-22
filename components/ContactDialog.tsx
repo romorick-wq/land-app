@@ -19,7 +19,7 @@ export function ContactDialog() {
     updateOwner(owner!.id, {
       notes: owner!.notes ? `${owner!.notes}\n${line}` : line,
       contactLogged: { reaction, notes: notes.trim(), at: stamp.toISOString() },
-      status: owner!.status === "available" ? "under_review" : owner!.status,
+      status: owner!.status === "available" || owner!.status === "no_contact" ? "contacted" : owner!.status,
     });
     closeModals();
   }

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate": "node scripts/generate-campaign.mjs"
+    "generate": "node scripts/generate-stockyards.mjs"
   },
   "dependencies": {
     "@turf/turf": "^7.2.0",
