@@ -11,6 +11,7 @@ import { formatAcres } from "@/lib/format";
 
 const nav = [
   { href: "/", label: "Map" },
+  { href: "/crm", label: "Landowners" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/pulse", label: "Community Pulse" },
   { href: "/admin", label: "Admin" },
