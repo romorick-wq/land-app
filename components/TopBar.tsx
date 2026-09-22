@@ -11,7 +11,6 @@ import { formatAcres } from "@/lib/format";
 
 const nav = [
   { href: "/", label: "Map" },
-  { href: "/crm", label: "Landowners" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/pulse", label: "Community Pulse" },
   { href: "/admin", label: "Admin" },
@@ -97,6 +96,14 @@ export function TopBar() {
           <option value="Unassigned">Unassigned</option>
         </select>
         <div className="flex items-center gap-1">
+          <Link
+            href="/crm"
+            aria-pressed={pathname.startsWith("/crm") && filters.priority === "all"}
+            onClick={() => setFilters({ priority: "all" })}
+            className={`grid h-8 place-items-center rounded-md px-2 text-xs ${pathname.startsWith("/crm") && filters.priority === "all" ? "bg-[#3ddc84] font-semibold text-black" : "border border-white/10 text-white/80"}`}
+          >
+            Landowners
+          </Link>
           {PRIORITIES.map((priority) => {
             const pressed = filters.priority === priority.id;
             return (

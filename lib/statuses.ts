@@ -18,8 +18,8 @@ export const STATUSES: { id: StatusId; label: string; color: string }[] = [
 ];
 
 export const PRIORITIES: { id: Priority; label: string }[] = [
-  { id: "high", label: "Priority 1" },
   { id: "test_well", label: "Test Well" },
+  { id: "high", label: "Priority 1" },
   { id: "medium", label: "Priority 2" },
 ];
 
