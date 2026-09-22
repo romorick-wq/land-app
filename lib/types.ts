@@ -2,6 +2,13 @@ import type { MultiPolygon, Polygon } from "geojson";
 
 export type StatusId =
   | "available"
+  | "no_contact"
+  | "contacted"
+  | "offer_sent"
+  | "offer_made"
+  | "attorney_review"
+  | "offer_accepted"
+  | "denied"
   | "under_review"
   | "offer_pending"
   | "under_contract"
@@ -9,7 +16,7 @@ export type StatusId =
   | "not_available"
   | "excluded";
 
-export type Priority = "low" | "medium" | "high";
+export type Priority = "low" | "medium" | "high" | "test_well";
 
 export type TitleInstrument = {
   id: string;
@@ -77,13 +84,33 @@ export type Owner = {
   contactLogged?: ContactLog;
 };
 
+export type TractInterest = {
+  ownerId: string;
+  netSurface: number;
+  netMineral: number;
+  netGeothermal: number;
+  leaseStatus: string;
+  titleStatus: string;
+  acquisitionStatus: string;
+  bonusPerAcre: number | null;
+  totalDollars: number | null;
+  comments: string;
+  reportUrl: string;
+  priority: Priority;
+};
+
 export type Parcel = {
   id: string;
   ownerId: string;
   acres: number;
   apn: string;
   legal: string;
+  label?: string;
+  labelAt?: [number, number];
+  outline?: boolean;
   geometry: Polygon | MultiPolygon;
+  status?: StatusId;
+  interests?: TractInterest[];
 };
 
 export type CampaignData = {

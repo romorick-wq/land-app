@@ -1,4 +1,3 @@
-import { acresForOwner } from "./filters";
 import { STATUSES } from "./statuses";
 import type { Owner, Parcel, StatusId } from "./types";
 
@@ -17,7 +16,16 @@ export type CampaignMetrics = {
   recent: Owner[];
 };
 
-const IN_PROGRESS: StatusId[] = ["under_review", "offer_pending", "under_contract"];
+const IN_PROGRESS: StatusId[] = [
+  "contacted",
+  "offer_sent",
+  "offer_made",
+  "attorney_review",
+  "offer_accepted",
+  "under_review",
+  "offer_pending",
+  "under_contract",
+];
 
 export function campaignMetrics(owners: Owner[], parcels: Parcel[]): CampaignMetrics {
   const byStatus = Object.fromEntries(
@@ -27,7 +35,10 @@ export function campaignMetrics(owners: Owner[], parcels: Parcel[]): CampaignMet
 
   for (const owner of leads) {
     byStatus[owner.status].owners += 1;
-    byStatus[owner.status].acres += acresForOwner(parcels, owner.id);
+  }
+  for (const parcel of parcels) {
+    const status = parcel.status ?? "available";
+    byStatus[status].acres += parcel.acres;
   }
 
   const totalAcres = parcels.reduce((sum, parcel) => sum + parcel.acres, 0);
@@ -44,7 +55,7 @@ export function campaignMetrics(owners: Owner[], parcels: Parcel[]): CampaignMet
     agreements: leads.filter((owner) => owner.agreementGeneratedAt).length,
     inProgressOwners: IN_PROGRESS.reduce((sum, id) => sum + byStatus[id].owners, 0),
     inProgressAcres: IN_PROGRESS.reduce((sum, id) => sum + byStatus[id].acres, 0),
-    contacted: leads.filter((owner) => owner.status !== "available" && owner.status !== "excluded").length,
+    contacted: leads.filter((owner) => owner.status !== "available" && owner.status !== "no_contact" && owner.status !== "excluded").length,
     leadCount: leads.length,
     coverage: totalAcres > 0 ? (securedAcres / totalAcres) * 100 : 0,
     recent,

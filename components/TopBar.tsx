@@ -5,13 +5,15 @@ import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import { useCampaign } from "./CampaignProvider";
 import { campaignMetrics } from "@/lib/metrics";
-import { AGENTS, PRIORITIES, PROJECT, STATUSES } from "@/lib/statuses";
+import { ADMIN_LABEL, agentInitials } from "@/lib/agents";
+import { PRIORITIES, PROJECT, STATUSES } from "@/lib/statuses";
 import { formatAcres } from "@/lib/format";
 
 const nav = [
   { href: "/", label: "Map" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/pulse", label: "Community Pulse" },
+  { href: "/admin", label: "Admin" },
 ];
 
 export function TopBar() {
@@ -19,13 +21,15 @@ export function TopBar() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
-  const { owners, parcels, filters, setFilters, importCollection, resetCampaign, importError, clearImportError } = useCampaign();
+  const { owners, parcels, agents, filters, setFilters, importCollection, resetCampaign, importError, clearImportError } = useCampaign();
   const metrics = campaignMetrics(owners, parcels);
   const leadAcres = parcels.reduce((sum, parcel) => {
     const owner = owners.find((item) => item.id === parcel.ownerId);
     return sum + (owner?.isLead ? parcel.acres : 0);
   }, 0);
-  const agents = Array.from(new Set([...AGENTS, ...owners.map((owner) => owner.agent).filter(Boolean), "Unassigned"])).sort();
+  const agentNames = Array.from(
+    new Set([...agents.map((agent) => agent.name), ...owners.map((owner) => owner.agent).filter(Boolean)]),
+  ).sort((a, b) => a.localeCompare(b));
 
   async function onFile(file: File | undefined) {
     if (!file) return;
@@ -84,25 +88,29 @@ export function TopBar() {
           className="hidden h-8 rounded-md border border-white/10 bg-[#0e131a] px-2 text-xs xl:block"
         >
           <option value="all">All agents</option>
-          {agents.map((agent) => (
+          {agentNames.map((agent) => (
             <option key={agent} value={agent}>
               {agent}
             </option>
           ))}
+          <option value="Unassigned">Unassigned</option>
         </select>
-        <select
-          aria-label="Priority"
-          value={filters.priority}
-          onChange={(event) => setFilters({ priority: event.target.value as typeof filters.priority })}
-          className="hidden h-8 rounded-md border border-white/10 bg-[#0e131a] px-2 text-xs xl:block"
-        >
-          <option value="all">All priorities</option>
-          {PRIORITIES.map((priority) => (
-            <option key={priority.id} value={priority.id}>
-              {priority.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-1">
+          {PRIORITIES.map((priority) => {
+            const pressed = filters.priority === priority.id;
+            return (
+              <button
+                key={priority.id}
+                type="button"
+                aria-pressed={pressed}
+                onClick={() => setFilters({ priority: pressed ? "all" : priority.id })}
+                className={`h-8 rounded-md px-2 text-xs ${pressed ? "bg-[#3ddc84] font-semibold text-black" : "border border-white/10 text-white/80"}`}
+              >
+                {priority.label}
+              </button>
+            );
+          })}
+        </div>
         <button
           type="button"
           aria-pressed={filters.leadsOnly}
@@ -166,10 +174,12 @@ export function TopBar() {
             onChange={(event) => onFile(event.target.files?.[0])}
           />
         </div>
-        <div className="hidden items-center gap-2 sm:flex">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-[#3ddc84] text-[11px] font-bold text-black">AR</span>
-          <span className="text-xs text-white/70">Alex Rivera</span>
-        </div>
+        <Link href="/admin" className="hidden items-center gap-2 sm:flex" aria-label={ADMIN_LABEL}>
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-[#3ddc84] text-[11px] font-bold text-black">
+            {agentInitials("Rick Romo")}
+          </span>
+          <span className="whitespace-nowrap text-xs text-white/70">{ADMIN_LABEL}</span>
+        </Link>
       </div>
       <div className="flex gap-3 overflow-x-auto border-t border-white/5 px-3 py-1.5 text-[11px] text-white/70">
         {STATUSES.map((status) => (

@@ -1,5 +1,6 @@
 "use client";
 
+import { beenVerifiedPeople, beenVerifiedSearchUrl, BEENVERIFIED_HOME } from "@/lib/beenverified";
 import { useCampaign } from "./CampaignProvider";
 import { StatusPill } from "./StatusPill";
 import { acresForOwner, ownerMatches, parcelsForOwner } from "@/lib/filters";
@@ -27,24 +28,29 @@ export function OwnerRail() {
           const acres = acresForOwner(parcels, owner.id);
           const count = parcelsForOwner(parcels, owner.id).length;
           const selected = owner.id === selectedOwnerId;
+          const people = beenVerifiedPeople(owner.name);
+          const lookupUrl = people[0] ? beenVerifiedSearchUrl(people[0]) : BEENVERIFIED_HOME;
           return (
-            <button
+            <div
               key={owner.id}
-              type="button"
-              onClick={() => selectOwner(owner.id)}
-              className={`block w-full border-b border-white/5 px-3 py-2 text-left hover:bg-white/5 ${selected ? "bg-white/10" : ""}`}
+              className={`border-b border-white/5 px-3 py-2 hover:bg-white/5 ${selected ? "bg-white/10" : ""}`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-sm leading-5">{owner.name}</span>
-                <StatusPill status={owner.status} />
-              </div>
-              <div className="mt-1 flex justify-between text-[11px] text-white/45">
-                <span>
-                  {count} parcel{count === 1 ? "" : "s"} · {formatAcres(acres)} ac
-                </span>
-                <span>{relativeTime(owner.updatedAt)}</span>
-              </div>
-            </button>
+              <button type="button" className="block w-full text-left" onClick={() => selectOwner(owner.id)}>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-sm leading-5">{owner.name}</span>
+                  <StatusPill status={owner.status} />
+                </div>
+                <div className="mt-1 flex justify-between text-[11px] text-white/45">
+                  <span>
+                    {count} parcel{count === 1 ? "" : "s"} · {formatAcres(acres)} ac
+                  </span>
+                  <span>{relativeTime(owner.updatedAt)}</span>
+                </div>
+              </button>
+              <a className="mt-1 inline-block text-[11px] text-[#7dffb8]" href={lookupUrl} target="_blank" rel="noreferrer">
+                BeenVerified{people.length > 1 ? ` · ${people.length}` : ""}
+              </a>
+            </div>
           );
         })}
       </div>

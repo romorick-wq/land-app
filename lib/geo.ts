@@ -32,11 +32,11 @@ export function boundsOf(parcels: Parcel[]): [[number, number], [number, number]
 
 export function parcelAtPoint(parcels: Parcel[], lng: number, lat: number) {
   const cursor = point([lng, lat]);
-  return parcels.find((parcel) => booleanPointInPolygon(cursor, parcelFeature(parcel)));
+  return parcels.find((parcel) => !parcel.outline && booleanPointInPolygon(cursor, parcelFeature(parcel)));
 }
 
 export function parcelsIntersecting(parcels: Parcel[], shape: Feature<Polygon | MultiPolygon>, minAcres: number) {
-  return parcels.filter((parcel) => parcel.acres >= minAcres && booleanIntersects(parcelFeature(parcel), shape));
+  return parcels.filter((parcel) => !parcel.outline && parcel.acres >= minAcres && booleanIntersects(parcelFeature(parcel), shape));
 }
 
 export function boxPolygon(start: Position, end: Position): Feature<Polygon> | null {
