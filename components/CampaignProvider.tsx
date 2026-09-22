@@ -46,8 +46,9 @@ function applySeedAdditions(stored: CampaignData, seed: CampaignData): CampaignD
   const ids = new Set(stored.parcels.map((parcel) => parcel.id));
   const owners = stored.owners.map((owner) => {
     const seeded = seedOwners.get(owner.id);
-    if (seeded?.priority !== "test_well") return owner;
-    return { ...owner, priority: seeded.priority };
+    const withPriority = seeded?.priority === "test_well" ? { ...owner, priority: seeded.priority } : owner;
+    if (!withPriority.isLead || withPriority.agent.trim()) return withPriority;
+    return { ...withPriority, agent: ADMIN_AGENT.name };
   });
   const parcels = stored.parcels.map((parcel) => {
     const seeded = seedParcels.get(parcel.id);
